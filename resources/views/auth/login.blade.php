@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Login - Controle de Estoque CEVESP</title>
     <link rel="icon" type="image/png" href="{{ asset('logo-cevesp.png') }}">
 

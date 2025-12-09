@@ -20,5 +20,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('estoque:checar-alertas')->daily();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, \Illuminate\Http\Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Sua sessão expirou. Por favor, recarregue a página e tente novamente.',
+                ], 419);
+            }
+
+            return redirect()->back()
+                ->withInput($request->except('password', '_token'))
+                ->withErrors(['_token' => 'Sua sessão expirou. Por favor, recarregue a página e tente novamente.']);
+        });
     })->create();
