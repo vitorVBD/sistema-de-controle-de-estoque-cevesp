@@ -14,6 +14,11 @@ Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+// Rota para renovar token CSRF
+Route::get('/api/csrf-token', function() {
+    return response()->json(['token' => csrf_token()]);
+})->middleware('web');
+
 // Rotas protegidas (requerem autenticação)
 Route::middleware('auth')->group(function () {
     Route::get('/', function () {

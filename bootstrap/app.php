@@ -24,7 +24,16 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->expectsJson()) {
                 return response()->json([
                     'message' => 'Sua sessão expirou. Por favor, recarregue a página e tente novamente.',
+                    'reload' => true,
+                    'csrf_expired' => true
                 ], 419);
+            }
+
+            // Para requisições de login, redirecionar para a página de login com mensagem
+            if ($request->is('login') || $request->routeIs('login')) {
+                return redirect()->route('login')
+                    ->withInput($request->except('password', '_token'))
+                    ->withErrors(['_token' => 'Sua sessão expirou. Por favor, tente fazer login novamente.']);
             }
 
             return redirect()->back()

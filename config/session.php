@@ -32,7 +32,7 @@ return [
     |
     */
 
-    'lifetime' => (int) env('SESSION_LIFETIME', 120),
+    'lifetime' => (int) env('SESSION_LIFETIME', 240), // Aumentado para 4 horas
 
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
 
@@ -203,7 +203,7 @@ return [
     |
     */
 
-    'same_site' => env('SESSION_SAME_SITE', null),
+    'same_site' => env('SESSION_SAME_SITE', 'lax'), // 'lax' é mais compatível com mobile que 'strict' ou null
 
     /*
     |--------------------------------------------------------------------------

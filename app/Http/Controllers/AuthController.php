@@ -30,7 +30,6 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
-        // Tentar autenticar usando o campo 'username'
         $user = User::where('username', $credentials['usuario'])->first();
 
         if ($user && Hash::check($credentials['password'], $user->password)) {

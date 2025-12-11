@@ -29,7 +29,7 @@
         <!-- Formulário de Login -->
         <div class="bg-white shadow-xl rounded-lg p-8">
             @if($errors->any())
-                <div class="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded relative" role="alert">
+                <div class="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded relative" role="alert" id="error-messages">
                     <ul class="list-disc list-inside">
                         @foreach($errors->all() as $error)
                             <li>{{ $error }}</li>
@@ -95,6 +95,7 @@
                 <div>
                     <button
                         type="submit"
+                        id="login-submit"
                         class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out cursor-pointer"
                     >
                         Entrar
@@ -102,6 +103,111 @@
                 </div>
             </form>
         </div>
+
+        <script>
+            (function() {
+                function updateCsrfToken() {
+                    return fetch('/api/csrf-token', {
+                        method: 'GET',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    }).then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch CSRF token');
+                        }
+                        return response.json();
+                    }).then(data => {
+                        if (data.token) {
+                            const metaTag = document.querySelector('meta[name="csrf-token"]');
+                            if (metaTag) {
+                                metaTag.setAttribute('content', data.token);
+                            }
+                            const csrfInput = document.querySelector('input[name="_token"]');
+                            if (csrfInput) {
+                                csrfInput.value = data.token;
+                            }
+                            return data.token;
+                        }
+                    }).catch(error => {
+                        console.warn('Erro ao atualizar token CSRF:', error);
+                        return null;
+                    });
+                }
+
+                const form = document.querySelector('form[method="POST"]');
+
+                if (form) {
+                    form.addEventListener('submit', function(e) {
+                        updateCsrfToken();
+                    });
+                }
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    setTimeout(function() {
+                        const errorContainer = document.getElementById('error-messages') || document.querySelector('.bg-red-50.border-red-200');
+                        if (errorContainer) {
+                            const errorText = errorContainer.textContent.toLowerCase();
+
+                            const isTokenError = (
+                                errorText.includes('sessão expirou') ||
+                                (errorText.includes('token') && (errorText.includes('expirou') || errorText.includes('419'))) ||
+                                (errorText.includes('csrf') && (errorText.includes('expirou') || errorText.includes('419'))) ||
+                                errorText.includes('419')
+                            );
+
+                            if (isTokenError &&
+                                !errorText.includes('credenciais') &&
+                                !errorText.includes('correspondem') &&
+                                !errorText.includes('não correspondem')) {
+                                updateCsrfToken().then(() => {
+                                    const formContainer = document.querySelector('.bg-white.shadow-xl');
+                                    if (formContainer && !document.getElementById('retry-message')) {
+                                        const retryDiv = document.createElement('div');
+                                        retryDiv.id = 'retry-message';
+                                        retryDiv.className = 'mb-4 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded relative';
+                                        retryDiv.innerHTML = '<p class="text-sm">Token atualizado. Você pode tentar fazer login novamente.</p>';
+                                        formContainer.insertBefore(retryDiv, formContainer.firstChild);
+
+                                        setTimeout(() => {
+                                            retryDiv.remove();
+                                        }, 5000);
+                                    }
+                                });
+                            }
+                        }
+                    }, 100);
+                });
+
+                setInterval(function() {
+                    updateCsrfToken();
+                }, 10 * 60 * 1000);
+
+                let lastFocusTime = Date.now();
+                document.addEventListener('visibilitychange', function() {
+                    if (!document.hidden) {
+                        const timeSinceLastFocus = Date.now() - lastFocusTime;
+                        if (timeSinceLastFocus > 5 * 60 * 1000) {
+                            updateCsrfToken();
+                        }
+                        lastFocusTime = Date.now();
+                    }
+                });
+
+                let lastInteraction = Date.now();
+                if (form) {
+                    form.addEventListener('focusin', function() {
+                        const timeSinceLastInteraction = Date.now() - lastInteraction;
+                        if (timeSinceLastInteraction > 5 * 60 * 1000) {
+                            updateCsrfToken();
+                        }
+                        lastInteraction = Date.now();
+                    }, true);
+                }
+            })();
+        </script>
 
         <!-- Footer -->
         <div class="text-center space-y-1">
